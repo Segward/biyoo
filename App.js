@@ -1,6 +1,7 @@
 const dotenv = require("dotenv");
 const {REST, Routes, Client, Events, GatewayIntentBits, Collection} = require("discord.js");
 const commands = require("./src/cmds.js");
+const {dbAddUser, dbGetUser} = require("./src/dbm.js");
 dotenv.config();
 
 const token = process.env.DISCORD_TOKEN;
@@ -45,6 +46,12 @@ for (const command of commands) {
 client.on(Events.InteractionCreate, async (interaction) => {
   if (!interaction.isChatInputCommand())
     return;
+
+  const userId = interaction.user.id;
+  let user = await dbGetUser(userId);
+  if (!user) {
+    user = await dbAddUser(userId);
+  }
 
   const c = interaction.client.commands.get(interaction.commandName);
   if (!c) {
