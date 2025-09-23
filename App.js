@@ -19,18 +19,13 @@ if (!clientId) {
   throw new Error("No client ID provided");
 }
 
-const guildId = process.env.GUILD_ID;
-if (!guildId) {
-  throw new Error("No guild ID provided");
-}
-
 const rest = new REST().setToken(token);
 const data = commands.map((command) => command.data.toJSON());
 (async () => {
   try {
     console.log("Registering slash commands");
     await rest.put(
-			Routes.applicationGuildCommands(clientId, guildId),
+			Routes.applicationCommands(clientId),
 			{ body: data },
 		);
   } catch (error) {
