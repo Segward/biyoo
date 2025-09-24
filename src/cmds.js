@@ -104,11 +104,11 @@ const ticket = {
     const issue = interaction.options.getString("issue");
     let channel = hasTicket(guild, category, interaction.user);
     if (channel) {
-      await interaction.reply(`You already have a ticket: ${channel}`);
+      await interaction.reply({ content: `You already have an open ticket: ${channel}`, ephemeral: true });
       return;
     }
 
-    const embed = new EmbedBuilder()
+    let embed = new EmbedBuilder()
       .setTitle("Support Ticket")
       .setDescription(`Ticket created by <@${interaction.user.id}>\nIssue: ${issue}`)
       .setColor(0x00AE86)
@@ -125,12 +125,10 @@ const ticket = {
 
     channel = await createTicketChannel(guild, category, interaction.user, issue);
     await channel.send({embeds: [embed], components: [row]});
-    await interaction.reply(`Your ticket has been created: ${channel}`);
 
     const filter = i => i.customId === 'close_ticket' && i.user.id === interaction.user.id;
     const time = 60 * 60 * 24 * 7 * 1000;
     const collector = channel.createMessageComponentCollector({ filter, time });
-
     let deleted = false;
     collector.on('collect', async i => {
       deleted = true;
@@ -144,6 +142,8 @@ const ticket = {
 
       await channel.delete();
     });
+
+    await interaction.reply({ content: `Your ticket has been created: ${channel}`, ephemeral: true });
   }
 }
 
