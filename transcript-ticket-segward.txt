@@ -1,0 +1,9 @@
+Transcript of #ticket-segward
+
+[9/24/2025, 3:08:58 PM] Biyoo#6893:  [Embed: 
+Title: Support Ticket
+Description: Ticket created by <@914308375095955478>
+Issue: test
+Footer: Ticket for segward
+]
+[9/24/2025, 3:09:01 PM] segward: meow

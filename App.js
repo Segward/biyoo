@@ -9,7 +9,7 @@ if (!token) {
   throw new Error("No token provided");
 }
 
-const client = new Client({intents: [GatewayIntentBits.Guilds]});
+const client = new Client({intents: [GatewayIntentBits.Guilds, GatewayIntentBits.MessageContent]});
 client.once(Events.ClientReady, (c) => {
   console.log(`Ready! Logged in as ${c.user.tag}`);
 });

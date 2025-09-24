@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
 const { dbAddUser, dbGetUser, dbAddCoins, dbSubCoins} = require("./dbm.js");
-const { hasTicket, createTicket, closeTicket } = require("./ticket.js");
+const { createTicket, closeTicket } = require("./ticket.js");
 
 const coins = {
   data: new SlashCommandBuilder()
@@ -96,15 +96,7 @@ const ticket = {
 
   async execute(interaction) {
     const guild = interaction.guild;
-
     const issue = interaction.options.getString("issue");
-    let channel = hasTicket(guild, interaction.user);
-    if (channel) {
-      await interaction.reply({ 
-        content: `You already have an open ticket: ${channel}`, 
-        ephemeral: true });
-      return;
-    }
 
     const embed = new EmbedBuilder()
       .setTitle("Support Ticket")
@@ -121,7 +113,7 @@ const ticket = {
     const row = new ActionRowBuilder()
       .addComponents(closeButton);
 
-    channel = await createTicket(guild, interaction.user, issue);
+    const channel = await createTicket(guild, interaction.user, issue);
     await channel.send({embeds: [embed], components: [row]});
 
     const filter = i => i.customId === 'close_ticket' && i.user.id === interaction.user.id;
