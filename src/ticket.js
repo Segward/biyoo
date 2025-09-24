@@ -1,4 +1,4 @@
-const { AttachmentBuilder, ChannelType, PermissionsBitField } = require('discord.js'); 
+const { EmbedBuilder, AttachmentBuilder, ChannelType, PermissionsBitField } = require('discord.js'); 
 
 const createTicketsCategory = async (guild) => {
   const category = await guild.channels.create({
@@ -102,11 +102,15 @@ const createTicket = async (guild, user, issue) => {
   }
 
   const channelName = `ticket-${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0')}`;
+  const embed = new EmbedBuilder()
+    .setTitle(`Created ${channelName}`)
+    .setDescription(`Ticked created by ${user.tag}.\nIssue: ${issue}`)
+    .setColor(0x00AE86)
+    .setTimestamp();
+
   const ticketLogsChannel = guild.channels.cache.find(
     c => c.name === "ticket-logs" && c.type === ChannelType.GuildText);
-  await ticketLogsChannel.send(
-    `Ticket ${channelName} created by ${user.tag}`);
-
+  await ticketLogsChannel.send({ embeds: [embed] });
   return guild.channels.create({
     name: channelName,
     type: ChannelType.GuildText,
@@ -153,11 +157,15 @@ const closeTicket = async (guild, channel, user) => {
 
   await channel.setParent(closedCategory.id);
   await transcribeTicket(guild, channel);
+  const embed = new EmbedBuilder()
+    .setTitle(`Closed ${channel.name}`)
+    .setDescription(`Ticked by ${user.tag} has been closed.`)
+    .setColor(0xFF0000)
+    .setTimestamp();
 
   const ticketLogsChannel = guild.channels.cache.find(
     c => c.name === "ticket-logs" && c.type === ChannelType.GuildText);
-  await ticketLogsChannel.send(
-    `Ticket ${channel.name} closed by ${user.tag}`);
+  await ticketLogsChannel.send({ embeds: [embed] });
 }
 
 module.exports = {
