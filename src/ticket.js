@@ -1,4 +1,5 @@
 const { EmbedBuilder, ButtonBuilder, ActionRowBuilder, ChannelType, PermissionsBitField } = require('discord.js'); 
+const { dbGetTicket } = require('./db.js');
 
 const createTicketLogChannel = async (guild) => {
   return guild.channels.create({
@@ -83,7 +84,7 @@ const createTicketChannel = async (guild, id, userId, reason) => {
     .setTimestamp();
 
   const button = new ButtonBuilder()
-    .setCustomId(id)
+    .setCustomId(`close-${id}`)
     .setLabel('Close Ticket')
     .setStyle('Danger');
 
@@ -108,9 +109,10 @@ const closeTicketChannel = async (guild, id, userId) => {
   await channel.setParent(closedTicketCategory.id);
   await channel.permissionOverwrites.edit(userId, { deny: [PermissionsBitField.Flags.ViewChannel] });
 
+  const ticket = await dbGetTicket(id);
   const embed = new EmbedBuilder()
     .setTitle(`Ticket #${id} Closed`)
-    .setDescription(`This ticket has been closed by <@${userId}>`)
+    .setDescription(`Ticket by <@${ticket.user_id}> has been closed by <@${userId}>`)
     .setColor(0xFF0000)
     .setTimestamp();
 
