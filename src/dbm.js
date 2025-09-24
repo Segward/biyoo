@@ -13,7 +13,6 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
 )`);
 
 const dbAddUser = (id) => {
-  console.log("Adding user with id:", id);
   return new Promise((resolve, reject) => {
     db.run(`INSERT INTO users (id, coins) VALUES (?, 0)`, [id], function(err) {
       if (err) {
@@ -25,7 +24,6 @@ const dbAddUser = (id) => {
 }
 
 const dbGetUser = (id) => {
-  console.log("Getting user with id:", id);
   return new Promise((resolve, reject) => {
     db.get(`SELECT * FROM users WHERE id = ?`, [id], (err, row) => {
       if (err) {
@@ -37,7 +35,6 @@ const dbGetUser = (id) => {
 }
 
 const dbAddCoins = (id, amount) => {
-  console.log(`Adding ${amount} coins to user with id:`, id);
   return new Promise((resolve, reject) => {
     db.run(`UPDATE users SET coins = coins + ? WHERE id = ?`, [amount, id], function(err) {
       if (err) {
@@ -49,7 +46,6 @@ const dbAddCoins = (id, amount) => {
 }
 
 const dbSubCoins = (id, amount) => {
-  console.log(`Subtracting ${amount} coins from user with id:`, id);
   return new Promise((resolve, reject) => {
     db.run(`UPDATE users SET coins = coins - ? WHERE id = ?`, [amount, id], function(err) {
       if (err) {

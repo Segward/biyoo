@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, ChannelType, PermissionsBitField } = require("discord.js");
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
 const { dbAddUser, dbGetUser, dbAddCoins, dbSubCoins} = require("./dbm.js");
+const { hasTicketsCategory, createTicketsCategory, hasTicket, createTicketChannel } = require("./ticket.js");
 
 const coins = {
   data: new SlashCommandBuilder()
@@ -84,84 +85,6 @@ const subCoins = {
   }
 }
 
-const hasTicketsCategory = async (guild) => {
-  return guild.channels.cache.find(
-    c => c.name.toLowerCase() === "tickets" && c.type === ChannelType.GuildCategory
-  );
-}
-
-const createTicketsCategory = async (guild) => {
-  const supportRole = guild.roles.cache.find(r => r.name.toLowerCase() === "meow");
-  return await guild.channels.create({
-    name: "tickets",
-    type: ChannelType.GuildCategory,
-    permissionOverwrites: [
-      {
-        id: guild.roles.everyone,
-        deny: [PermissionsBitField.Flags.ViewChannel],
-      },
-      {
-        id: supportRole.id,
-        allow: [PermissionsBitField.Flags.ViewChannel,
-          PermissionsBitField.Flags.SendMessages, 
-          PermissionsBitField.Flags.ManageChannels],
-      },
-      {
-        id: guild.client.user.id,
-        allow: [PermissionsBitField.Flags.ViewChannel,
-          PermissionsBitField.Flags.SendMessages,
-          PermissionsBitField.Flags.ManageChannels],
-      },
-    ],
-  });
-}
-
-const hasTicket = (guild, category, user) => {
-  const channelName = `ticket-${user.username}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "-")
-    .substring(0, 20);
-
-  return guild.channels.cache.find(c => c.name === channelName && c.parentId === category.id);
-};
-
-const createTicketChannel = async (guild, category, user, issue) => {
-  const channelName = `ticket-${user.username}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "-")
-    .substring(0, 20);
-
-  const supportRole = guild.roles.cache.find(r => r.name.toLowerCase() === "meow");
-  return guild.channels.create({
-    name: channelName,
-    type: ChannelType.GuildText,
-    parent: category,
-    permissionOverwrites: [
-      {
-        id: guild.roles.everyone,
-        deny: [PermissionsBitField.Flags.ViewChannel],
-      },
-      {
-        id: user.id,
-        allow: [PermissionsBitField.Flags.ViewChannel, 
-        PermissionsBitField.Flags.SendMessages],
-      },
-      {
-        id: guild.client.user.id,
-        allow: [PermissionsBitField.Flags.ViewChannel,
-          PermissionsBitField.Flags.SendMessages,
-          PermissionsBitField.Flags.ManageChannels],
-      },
-      {
-        id: supportRole.id,
-        allow: [PermissionsBitField.Flags.ViewChannel,
-          PermissionsBitField.Flags.SendMessages,
-          PermissionsBitField.Flags.ManageChannels],
-      },
-    ],
-  });
-}
-
 const ticket = {
   data: new SlashCommandBuilder()
     .setName("ticket")
@@ -173,45 +96,56 @@ const ticket = {
 
   async execute(interaction) {
     const guild = interaction.guild;
-    let category = await hasTicketsCategory(guild);
+    let category = hasTicketsCategory(guild);
     if (!category) {
       category = await createTicketsCategory(guild, interaction.user);
     }
 
     const issue = interaction.options.getString("issue");
-    let channel = await hasTicket(guild, category, interaction.user);
+    let channel = hasTicket(guild, category, interaction.user);
     if (channel) {
       await interaction.reply(`You already have a ticket: ${channel}`);
       return;
     }
 
+    const embed = new EmbedBuilder()
+      .setTitle("Support Ticket")
+      .setDescription(`Ticket created by <@${interaction.user.id}>\nIssue: ${issue}`)
+      .setColor(0x00AE86)
+      .setTimestamp()
+      .setFooter({ text: `Ticket for ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
+
+    const closeButton = new ButtonBuilder()
+      .setCustomId('close_ticket')
+      .setLabel('Close Ticket')
+      .setStyle(ButtonStyle.Danger);
+
+    const row = new ActionRowBuilder()
+      .addComponents(closeButton);
+
     channel = await createTicketChannel(guild, category, interaction.user, issue);
-    await channel.send(`Ticket created by <@${interaction.user.id}>: ${issue}`);
+    await channel.send({embeds: [embed], components: [row]});
     await interaction.reply(`Your ticket has been created: ${channel}`);
+
+    const filter = i => i.customId === 'close_ticket' && i.user.id === interaction.user.id;
+    const time = 60 * 60 * 24 * 7 * 1000;
+    const collector = channel.createMessageComponentCollector({ filter, time });
+
+    let deleted = false;
+    collector.on('collect', async i => {
+      deleted = true;
+      await i.deferUpdate();
+      await channel.delete();
+    });
+
+    collector.on('end', async i => {
+      if (deleted)
+        return;
+
+      await channel.delete();
+    });
   }
 }
 
-const closeTicket = {
-  data: new SlashCommandBuilder()
-    .setName("closeticket")
-    .setDescription("Close the current ticket"),
-
-  async execute(interaction) {
-    const user = interaction.user;
-    if (!interaction.member.permissions.has("Administrator")) {
-      await interaction.reply("You do not have permission to close this ticket.");
-      return;
-    }
-
-    const channel = interaction.channel;
-    if (!(channel.parent && channel.parent.name.toLowerCase() === "tickets")) {
-      await interaction.reply("This command can only be used in a ticket channel.");
-      return;
-    }
-
-    await channel.delete();
-  }
-}
-
-const commands = [coins, addCoins, subCoins, ticket, closeTicket];
+const commands = [coins, addCoins, subCoins, ticket];
 module.exports = commands;
