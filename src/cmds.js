@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require("discord.js");
 const { dbAddUser, dbGetUser, dbAddCoins, dbSubCoins} = require("./dbm.js");
-const { hasTicketsCategory, createTicketsCategory, hasTicket, createTicketChannel } = require("./ticket.js");
+const { hasTicket, createTicket, closeTicket } = require("./ticket.js");
 
 const coins = {
   data: new SlashCommandBuilder()
@@ -96,19 +96,17 @@ const ticket = {
 
   async execute(interaction) {
     const guild = interaction.guild;
-    let category = hasTicketsCategory(guild);
-    if (!category) {
-      category = await createTicketsCategory(guild, interaction.user);
-    }
 
     const issue = interaction.options.getString("issue");
-    let channel = hasTicket(guild, category, interaction.user);
+    let channel = hasTicket(guild, interaction.user);
     if (channel) {
-      await interaction.reply({ content: `You already have an open ticket: ${channel}`, ephemeral: true });
+      await interaction.reply({ 
+        content: `You already have an open ticket: ${channel}`, 
+        ephemeral: true });
       return;
     }
 
-    let embed = new EmbedBuilder()
+    const embed = new EmbedBuilder()
       .setTitle("Support Ticket")
       .setDescription(`Ticket created by <@${interaction.user.id}>\nIssue: ${issue}`)
       .setColor(0x00AE86)
@@ -123,27 +121,30 @@ const ticket = {
     const row = new ActionRowBuilder()
       .addComponents(closeButton);
 
-    channel = await createTicketChannel(guild, category, interaction.user, issue);
+    channel = await createTicket(guild, interaction.user, issue);
     await channel.send({embeds: [embed], components: [row]});
 
     const filter = i => i.customId === 'close_ticket' && i.user.id === interaction.user.id;
     const time = 60 * 60 * 24 * 7 * 1000;
     const collector = channel.createMessageComponentCollector({ filter, time });
+
     let deleted = false;
     collector.on('collect', async i => {
       deleted = true;
       await i.deferUpdate();
-      await channel.delete();
+      await closeTicket(guild, channel, interaction.user);
     });
 
     collector.on('end', async i => {
       if (deleted)
         return;
 
-      await channel.delete();
+      await closeTicket(guild, channel, interaction.user);
     });
 
-    await interaction.reply({ content: `Your ticket has been created: ${channel}`, ephemeral: true });
+    await interaction.reply({ 
+      content: `Your ticket has been created: ${channel}`, 
+      ephemeral: true });
   }
 }
 

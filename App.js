@@ -2,7 +2,6 @@ const dotenv = require("dotenv");
 const {REST, Routes, Client, Events, GatewayIntentBits, Collection} = require("discord.js");
 const commands = require("./src/cmds.js");
 const {dbAddUser, dbGetUser} = require("./src/dbm.js");
-const {closeTicket} = require("./src/ticket.js");
 dotenv.config();
 
 const token = process.env.DISCORD_TOKEN;
