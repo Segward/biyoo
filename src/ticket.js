@@ -110,16 +110,7 @@ const createTicket = async (guild, user, reason) => {
   }
 
   const channelName = `ticket-${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0')}`;
-  const embed = new EmbedBuilder()
-    .setTitle(`Created ${channelName}`)
-    .setDescription(`Ticked created by ${user.tag}.\nReason: ${reason}`)
-    .setColor(0x00AE86)
-    .setTimestamp();
-
-  const ticketLogsChannel = guild.channels.cache.find(
-    c => c.name === "ticket-logs" && c.type === ChannelType.GuildText);
-  await ticketLogsChannel.send({ embeds: [embed] });
-  return guild.channels.create({
+  const channel = await guild.channels.create({
     name: channelName,
     type: ChannelType.GuildText,
     parent: category,
@@ -137,6 +128,17 @@ const createTicket = async (guild, user, reason) => {
       },
     ],
   });
+
+  const embed = new EmbedBuilder()
+    .setTitle(`Created ${channelName}`)
+    .setDescription(`Ticked created by <@${user.id}>\nChannel: ${channel}\nReason: ${reason}`)
+    .setColor(0x00AE86)
+    .setTimestamp();
+
+  const ticketLogsChannel = guild.channels.cache.find(
+    c => c.name === "ticket-logs" && c.type === ChannelType.GuildText);
+  await ticketLogsChannel.send({ embeds: [embed] });
+  return channel;
 }
 
 const createClosedTicketsCategory = async (guild) => {
@@ -167,7 +169,7 @@ const closeTicket = async (guild, channel, user) => {
   await transcribeTicket(guild, channel);
   const embed = new EmbedBuilder()
     .setTitle(`Closed ${channel.name}`)
-    .setDescription(`Ticked by ${user.tag} has been closed.`)
+    .setDescription(`Ticket by <@${user.id}> has been closed\nChannel: ${channel}`)
     .setColor(0xFF0000)
     .setTimestamp();
 
