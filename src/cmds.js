@@ -90,17 +90,17 @@ const ticket = {
     .setName("ticket")
     .setDescription("Create a support ticket")
     .addStringOption(option =>
-      option.setName("issue")
-        .setDescription("Describe your issue")
+      option.setName("reason")
+        .setDescription("Describe your reason")
         .setRequired(true)),
 
   async execute(interaction) {
     const guild = interaction.guild;
-    const issue = interaction.options.getString("issue");
+    const reason = interaction.options.getString("reason");
 
     const embed = new EmbedBuilder()
       .setTitle("Support Ticket")
-      .setDescription(`Ticket created by <@${interaction.user.id}>\nIssue: ${issue}`)
+      .setDescription(`Ticket created by <@${interaction.user.id}>\nReason: ${reason}`)
       .setColor(0x00AE86)
       .setTimestamp()
       .setFooter({ text: `Ticket for ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
@@ -113,7 +113,7 @@ const ticket = {
     const row = new ActionRowBuilder()
       .addComponents(closeButton);
 
-    const channel = await createTicket(guild, interaction.user, issue);
+    const channel = await createTicket(guild, interaction.user, reason);
     await channel.send({embeds: [embed], components: [row]});
 
     const filter = i => i.customId === 'close_ticket' && i.user.id === interaction.user.id;

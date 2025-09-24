@@ -79,7 +79,15 @@ const transcribeTicket = async (guild, channel) => {
         const description = embed.description ? `Description: ${embed.description}\n` : "";
         const url = embed.url ? `URL: ${embed.url}\n` : "";
         const footer = embed.footer ? `Footer: ${embed.footer.text}\n` : "";
-        content += ` [Embed: \n${title}${description}${url}${footer}]`;
+        const video = embed.video ? `Video: ${embed.video.url}\n` : "";
+        const image = embed.image ? `Image: ${embed.image.url}\n` : "";
+        content += ` [Embed:\n${title}${description}${url}${footer}${video}${image}]`;
+      });
+    }
+
+    if (message.stickers.size > 0) {
+      message.stickers.forEach(sticker => {
+        content += ` [Sticker: ${sticker.name}]`;
       });
     }
 
@@ -94,7 +102,7 @@ const transcribeTicket = async (guild, channel) => {
   await transcriptChannel.send({ files: [attachment] });
 };
 
-const createTicket = async (guild, user, issue) => {
+const createTicket = async (guild, user, reason) => {
   let category = guild.channels.cache.find(
     c => c.name === "tickets" && c.type === ChannelType.GuildCategory); 
   if (!category) {
@@ -104,7 +112,7 @@ const createTicket = async (guild, user, issue) => {
   const channelName = `ticket-${Math.floor(Math.random() * 0x10000).toString(16).padStart(4, '0')}`;
   const embed = new EmbedBuilder()
     .setTitle(`Created ${channelName}`)
-    .setDescription(`Ticked created by ${user.tag}.\nIssue: ${issue}`)
+    .setDescription(`Ticked created by ${user.tag}.\nReason: ${reason}`)
     .setColor(0x00AE86)
     .setTimestamp();
 
