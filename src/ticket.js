@@ -1,5 +1,4 @@
-const { ChannelType, PermissionsBitField } = require('discord.js'); 
-const fs = require('fs');
+const { AttachmentBuilder, ChannelType, PermissionsBitField } = require('discord.js'); 
 
 const createTicketsCategory = async (guild) => {
   const category = await guild.channels.create({
@@ -87,11 +86,12 @@ const transcribeTicket = async (guild, channel) => {
     transcript += `[${time}] ${author}: ${content}\n`;
   }
 
-  const fileName = `transcript-${channel.name}.txt`;
-  fs.writeFileSync(fileName, transcript);
+  const buffer = Buffer.from(transcript, 'utf-8');
+  const attachment = new AttachmentBuilder(buffer, { 
+    name: `${channel.name}-transcript.txt` });
   const transcriptChannel = guild.channels.cache.find(
     c => c.name === "ticket-transcript" && c.type === ChannelType.GuildText);
-  await transcriptChannel.send({ files: [fileName] });
+  await transcriptChannel.send({ files: [attachment] });
 };
 
 const createTicket = async (guild, user, issue) => {
