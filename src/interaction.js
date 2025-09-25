@@ -1,23 +1,25 @@
-const { closeTicketChannel } = require('./ticket.js');
+const { EmbedBuilder } = require('discord.js');
+const { createTicketChannel, closeTicketChannel, deleteTicketChannel } = require('./ticket.js');
 
-const onTicketButtonClick = async (interaction) => {
-  const id = interaction.customId;
-  const parts = id.split('-');
-  if (parts.length !== 3 || parts[0] !== 'close' || parts[1] !== 'ticket') {
-    console.error('Invalid ticket button id:', id);
-    return;
-  }
-
+const onCloseTicketButtonClick = async (interaction) => {
+  interaction.deferUpdate();
   const guild = interaction.guild;
-  const ticketId = parts[2];
-  const userId = interaction.user.id;
-  await closeTicketChannel(guild, ticketId, userId);
+  const channel = interaction.channel;
+  await closeTicketChannel(guild, channel, interaction.user.id);
+}
+
+const onDeleteTicketButtonClick = async (interaction) => {
+  interaction.deferUpdate();
+  const channel = interaction.channel;
+  await deleteTicketChannel(channel, interaction.user.id);
 }
 
 const onButtonClick = async (interaction) => {
   const id = interaction.customId;
   if (id.startsWith('close-ticket')) {
-    onTicketButtonClick(interaction);
+    await onCloseTicketButtonClick(interaction);
+  } else if (id.startsWith('delete-ticket')) {
+    await onDeleteTicketButtonClick(interaction);
   } else {
     console.log('Unknown button id:', id);
   }
@@ -35,20 +37,43 @@ const onChatInput = async (interaction) => {
     await command.execute(interaction);
   } catch (error) {
     console.error('Error executing command:', error);
-    await interaction.reply({
-      content: 'There was an error while executing this command!',
-      ephemeral: true
-    });
+  }
+}
+
+const onTicketModalSubmit = async (interaction) => {
+  const reason = interaction.fields.getTextInputValue('ticket-reason');
+  const ticketId = `ticket-${Math.floor(Math.random() * 0x100000000).
+    toString(16).padStart(8, '0')}`;
+  const channel = await createTicketChannel(interaction.guild, 
+    ticketId, interaction.user.id, reason);
+
+  const embed = new EmbedBuilder()
+    .setTitle('Ticket Created')
+    .setDescription(`Your ticket has been created: ${channel}`)
+    .setColor(0x00FF00)
+    .setTimestamp();
+
+  await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+const onModalInteraction = async (interaction) => {
+  const id = interaction.customId;
+  if (id === 'ticket-modal') {
+    await onTicketModalSubmit(interaction);
+  } else {
+    console.log('Unknown modal id:', id);
   }
 }
 
 const handleInteraction = async (interaction) => {
-  if (interaction.type === 'button') {
-    await onButtonClick(interaction); 
-  } else if (interaction.type === 'chatInput') {
+  if (interaction.isButton()) {
+    await onButtonClick(interaction);
+  } else if (interaction.isChatInputCommand()) {
     await onChatInput(interaction);
+  } else if (interaction.isModalSubmit()) {
+    await onModalInteraction(interaction);
   } else {
-    console.log('Unknown interaction type:', interaction.type);
+    console.log('Unknown interaction type');
   }
 }
 

@@ -9,16 +9,17 @@ const db = new sqlite3.Database(source, (err) => {
 
 db.run(`CREATE TABLE IF NOT EXISTS tickets (
   id TEXT PRIMARY KEY,
+  channel_id TEXT,
   user_id INTEGER,
   reason TEXT,
   status TEXT DEFAULT 'open',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
-const dbCreateTicket = (id, user_id, reason) => {
+const dbCreateTicket = (id, channelId, userId, reason) => {
   return new Promise((resolve, reject) => {
-    const sql = 'INSERT INTO tickets (id, user_id, reason) VALUES (?, ?, ?)';
-    db.run(sql, [id, user_id, reason], function(err) {
+    const sql = 'INSERT INTO tickets (id, channel_id, user_id, reason) VALUES (?, ?, ?, ?)';
+    db.run(sql, [id, channelId, userId, reason], function(err) {
       if (err) {
         console.error(err.message);
         return reject(err);
@@ -41,18 +42,5 @@ const dbGetTicket = (id) => {
   });
 };
 
-const dbUpdateTicketStatus = (id, status) => {
-  return new Promise((resolve, reject) => {
-    const sql = 'UPDATE tickets SET status = ? WHERE id = ?';
-    db.run(sql, [status, id], function(err) {
-      if (err) {
-        console.error(err.message);
-        return reject(err);
-      }
-      resolve(this.changes);
-    });
-  });
-};
-
-module.exports = { dbCreateTicket, dbGetTicket, dbUpdateTicketStatus };
+module.exports = { dbCreateTicket, dbGetTicket };
 

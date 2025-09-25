@@ -5,14 +5,12 @@ const { Client, Events, GatewayIntentBits } = require("discord.js");
 const dotenv = require("dotenv").config();
 
 const token = process.env.DISCORD_TOKEN;
-if (!token) {
+if (!token)
   throw new Error("No token provided");
-}
 
 const clientId = process.env.CLIENT_ID;
-if (!clientId) {
+if (!clientId)
   throw new Error("No client ID provided");
-}
 
 const client = new Client({intents: [
   GatewayIntentBits.Guilds, 
@@ -20,10 +18,8 @@ const client = new Client({intents: [
 ]});
 
 client.once(Events.ClientReady, (c) => {
-  console.log(`Ready! Logged in as ${c.user.tag}`);
+  registerCommands(client, commands, token);
 });
-
-await registerCommands(client, commands, token);
 
 client.on(Events.InteractionCreate, async (interaction) => {
   await handleInteraction(interaction);
