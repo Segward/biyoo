@@ -1,17 +1,20 @@
 const { EmbedBuilder } = require('discord.js');
-const { createTicketChannel, closeTicketChannel, deleteTicketChannel } = require('./ticket.js');
+const { createTicketChannel, closeTicketChannel, deleteTicketChannel, transcribeTicketChannel } = require('./ticket.js');
 
 const onCloseTicketButtonClick = async (interaction) => {
-  interaction.deferUpdate();
-  const guild = interaction.guild;
-  const channel = interaction.channel;
-  await closeTicketChannel(guild, channel, interaction.user.id);
+  await closeTicketChannel(interaction);
 }
 
 const onDeleteTicketButtonClick = async (interaction) => {
-  interaction.deferUpdate();
-  const channel = interaction.channel;
-  await deleteTicketChannel(channel, interaction.user.id);
+  await deleteTicketChannel(interaction);
+}
+
+const onTranscribeTicketButtonClick = async (interaction) => {
+  await transcribeTicketChannel(interaction);
+}
+
+const onTicketModalSubmit = async (interaction) => {
+  await createTicketChannel(interaction);
 }
 
 const onButtonClick = async (interaction) => {
@@ -20,8 +23,19 @@ const onButtonClick = async (interaction) => {
     await onCloseTicketButtonClick(interaction);
   } else if (id.startsWith('delete-ticket')) {
     await onDeleteTicketButtonClick(interaction);
+  } else if (id.startsWith('transcribe-ticket')) {
+    await onTranscribeTicketButtonClick(interaction);
   } else {
     console.log('Unknown button id:', id);
+  }
+}
+
+const onModalInteraction = async (interaction) => {
+  const id = interaction.customId;
+  if (id === 'ticket-modal') {
+    await onTicketModalSubmit(interaction);
+  } else {
+    console.log('Unknown modal id:', id);
   }
 }
 
@@ -37,31 +51,6 @@ const onChatInput = async (interaction) => {
     await command.execute(interaction);
   } catch (error) {
     console.error('Error executing command:', error);
-  }
-}
-
-const onTicketModalSubmit = async (interaction) => {
-  const reason = interaction.fields.getTextInputValue('ticket-reason');
-  const ticketId = `ticket-${Math.floor(Math.random() * 0x100000000).
-    toString(16).padStart(8, '0')}`;
-  const channel = await createTicketChannel(interaction.guild, 
-    ticketId, interaction.user.id, reason);
-
-  const embed = new EmbedBuilder()
-    .setTitle('Ticket Created')
-    .setDescription(`Your ticket has been created: ${channel}`)
-    .setColor(0x00FF00)
-    .setTimestamp();
-
-  await interaction.reply({ embeds: [embed], ephemeral: true });
-}
-
-const onModalInteraction = async (interaction) => {
-  const id = interaction.customId;
-  if (id === 'ticket-modal') {
-    await onTicketModalSubmit(interaction);
-  } else {
-    console.log('Unknown modal id:', id);
   }
 }
 
