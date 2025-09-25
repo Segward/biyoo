@@ -69,11 +69,17 @@ const createTicketChannel = async (interaction) => {
 
   let embed = new EmbedBuilder()
     .setTitle('Ticket Created')
-    .setDescription(`Ticket created at <#${channel.id}>\nId: ${id}`)
+    .setDescription(`Ticket created at <#${channel.id}>`)
     .setColor('Green')
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
+
+  embed = new EmbedBuilder()
+    .setTitle('Ticket Created')
+    .setDescription(`Ticket created at <#${channel.id}>\nId: ${id}\nReason: ${reason}\nBy: <@${userId}>`)
+    .setColor('Green')
+    .setTimestamp();
 
   const logChannel = guild.channels.cache.find(c => c.name === 'ticket-logs' 
     && c.type === ChannelType.GuildText) || await createTicketLogChannel(category);
@@ -248,6 +254,11 @@ const transcribeTicketChannel = async (interaction) => {
 
   await transcriptChannel.send({ embeds: [embed], files: [attachment] });
   await interaction.reply({ embeds: [embed] });
+
+  const logChannel = guild.channels.cache.find(c => c.name === 'ticket-logs' 
+    && c.type === ChannelType.GuildText) || await createTicketLogChannel(category);
+
+  await logChannel.send({ embeds: [embed] });
 }
 
 module.exports = { createTicketChannel, closeTicketChannel, deleteTicketChannel, transcribeTicketChannel };
